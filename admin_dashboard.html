@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Dashboard - Nexnora</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .employee-list-container {
+            width: 95%;
+            margin-top: 30px;
+            background-color: white;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+            overflow: hidden;
+            animation: fadeIn 1s ease-in-out;
+            padding: 20px;
+        }
+        .employee-list-container h2 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #2c3e50;
+        }
+        .view-report-btn {
+            background-color: #007bff; /* Blue */
+            color: white;
+            padding: 8px 12px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: background-color 0.3s ease;
+            text-decoration: none; /* For the <a> tag styled as a button */
+            display: inline-block; /* For the <a> tag styled as a button */
+            text-align: center;
+        }
+        .view-report-btn:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="logo-container">
+        <img src="{{ url_for('static', filename='nexnoralogo.jpg') }}" alt="Nexnora Technologies Logo" class="logo">
+    </div>
+    <h1>Admin Dashboard</h1>
+
+    <div class="button-group">
+    <a href="{{ url_for('add_employee') }}"><button>Add New Employee</button></a>
+    <a href="{{ url_for('dashboard') }}"><button>View Summary Dashboard</button></a> {# ADD THIS LINE #}
+    <a href="{{ url_for('records') }}"><button>View All Records</button></a>
+    <a href="{{ url_for('logout') }}"><button class="logout-btn">Logout</button></a>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <ul class="flash-messages">
+        {% for category, message in messages %}
+          <li class="flash-message {{ category }}">{{ message }}</li>
+        {% endfor %}
+        </ul>
+      {% endif %}
+    {% endwith %}
+
+    <div class="employee-list-container">
+        <h2>Employee List</h2>
+        {% if employees %}
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Employee ID</th>
+                    <th>Name</th>
+                    <th>Department</th>
+                    <th>Job Title</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for employee in employees %}
+                <tr>
+                    <td>{{ employee.id }}</td>
+                    <td>{{ employee.employee_id_text }}</td>
+                    <td>{{ employee.name }}</td>
+                    <td>{{ employee.department if employee.department else 'N/A' }}</td>
+                    <td>{{ employee.job_title if employee.job_title else 'N/A' }}</td>
+                    <td>
+                        <a href="{{ url_for('employee_report', employee_id=employee.id) }}" class="view-report-btn">View Report</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p style="text-align: center;">No employees added yet. Please add employees using the "Add New Employee" button.</p>
+        {% endif %}
+    </div>
+    <script>
+        // Optional: Make flash messages disappear after a few seconds for better UX
+        document.addEventListener('DOMContentLoaded', () => {
+            const flashMessages = document.querySelectorAll('.flash-message');
+            flashMessages.forEach(msg => {
+                setTimeout(() => {
+                    msg.style.opacity = '0';
+                    msg.style.height = '0';
+                    msg.style.padding = '0';
+                    msg.style.margin = '0';
+                    msg.style.border = 'none';
+                    msg.style.transition = 'opacity 0.5s ease-out, height 0.5s ease-out, padding 0.5s ease-out, margin 0.5s ease-out, border 0.5s ease-out';
+                }, 5000); // Messages disappear after 5 seconds
+            });
+        });
+    </script>
+</body>
+</html>

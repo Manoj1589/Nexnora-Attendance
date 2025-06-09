@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Attendance Records (Admin View) - Nexnora</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="logo-container">
+        <img src="{{ url_for('static', filename='nexnoralogo.jpg') }}" alt="Nexnora Technologies Logo" class="logo">
+    </div>
+    <h1>All Attendance Records (Admin View)</h1>
+
+    <div class="button-group">
+        <a href="{{ url_for('index') }}"><button>Back to Employee Mark Page</button></a>
+        <a href="{{ url_for('export_csv') }}" download="attendance_records.csv">
+            <button class="download-btn">Download All Records (CSV)</button>
+        </a>
+        <a href="{{ url_for('logout') }}"><button class="logout-btn">Logout</button></a>
+    </div>
+
+    <form class="filter-form" method="GET" action="{{ url_for('records') }}">
+        <label for="start_date">Start Date:</label>
+        <input type="date" id="start_date" name="start_date" value="{{ start_date if start_date else '' }}">
+        <label for="end_date">End Date:</label>
+        <input type="date" id="end_date" name="end_date" value="{{ end_date if end_date else '' }}">
+        <button type="submit">Apply Filters</button>
+        <a href="{{ url_for('records') }}"><button type="button">Clear Filters</button></a>
+    </form>
+
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <ul class="flash-messages">
+        {% for category, message in messages %}-
+          <li class="flash-message {{ category }}">{{ message }}</li>
+        {% endfor %}
+        </ul>
+      {% endif %}
+    {% endwith %}
+
+    {% if records %}
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Employee Name</th>
+                <th>Employee ID</th> {# New column header #}
+                <th>Date</th>
+                <th>Time In</th>
+                <th>Time Out</th>
+                <th>Location</th> {# ADD THIS LINE #}
+            </tr>
+        </thead>
+        <tbody>
+            {% for record in records %}
+            <tr>
+                <td>{{ record.id }}</td>
+                <td>{{ record.name }}</td>
+                <td>{{ record.employee_id_text }}</td> {# Display the new unique ID #}
+                <td>{{ record.date }}</td>
+                <td>{{ record.time_in }}</td>
+                <td>{{ record.time_out if record.time_out else 'N/A' }}</td>
+                <td>{{ record.location }}</td> {# ADD THIS LINE #}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p style="text-align: center; margin-top: 20px;">No attendance records found for the selected criteria.</p>
+    {% endif %}
+
+    <script>
+        // Optional: Make flash messages disappear after a few seconds for better UX
+        document.addEventListener('DOMContentLoaded', () => {
+            const flashMessages = document.querySelectorAll('.flash-message');
+            flashMessages.forEach(msg => {
+                setTimeout(() => {
+                    msg.style.opacity = '0';
+                    msg.style.height = '0';
+                    msg.style.padding = '0';
+                    msg.style.margin = '0';
+                    msg.style.border = 'none';
+                    msg.style.transition = 'opacity 0.5s ease-out, height 0.5s ease-out, padding 0.5s ease-out, margin 0.5s ease-out, border 0.5s ease-out';
+                }, 5000); // Messages disappear after 5 seconds
+            });
+        });
+    </script>
+</body>
+</html>

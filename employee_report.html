@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ employee.name }}'s Attendance Report - Nexnora</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="logo-container">
+        <img src="{{ url_for('static', filename='nexnoralogo.jpg') }}" alt="Nexnora Technologies Logo" class="logo">
+    </div>
+    <h1>{{ employee.name }} (ID: {{ employee.employee_id_text }}) - Attendance Report</h1>
+    <h2 style="font-size: 1.2em; color: #555;">Department: {{ employee.department if employee.department else 'N/A' }} | Job Title: {{ employee.job_title if employee.job_title else 'N/A' }}</h2>
+
+    <div class="button-group">
+        {# This button now correctly points to the 'dashboard' endpoint #}
+        <a href="{{ url_for('dashboard') }}"><button>Back to Admin Dashboard</button></a>
+        <a href="{{ url_for('logout') }}"><button class="logout-btn">Logout</button></a>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <ul class="flash-messages">
+        {% for category, message in messages %}
+          <li class="flash-message {{ category }}">{{ message }}</li>
+        {% endfor %}
+        </ul>
+      {% endif %}
+    {% endwith %}
+
+    <div class="employee-list-container"> {# Re-using class for consistent styling #}
+        <h3>Attendance History</h3>
+        {% if attendance_records %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Time In</th>
+                    <th>Time Out</th>
+                    <th>Location</th>
+                    <th>Duration (Minutes)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for record in attendance_records %}
+                <tr>
+                    <td>{{ record.date }}</td>
+                    <td>{{ record.time_in }}</td>
+                    <td>{{ record.time_out if record.time_out else 'N/A' }}</td>
+                    <td>{{ record.location if record.location else 'N/A' }}</td>
+                    <td>{{ record.duration_minutes if record.duration_minutes is not none else 'N/A' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p style="text-align: center;">No attendance records found for this employee.</p>
+        {% endif %}
+    </div>
+    <script>
+        // Optional: Make flash messages disappear after a few seconds for better UX
+        document.addEventListener('DOMContentLoaded', () => {
+            const flashMessages = document.querySelectorAll('.flash-message');
+            flashMessages.forEach(msg => {
+                setTimeout(() => {
+                    msg.style.opacity = '0';
+                    msg.style.height = '0';
+                    msg.style.padding = '0';
+                    msg.style.margin = '0';
+                    msg.style.border = 'none';
+                    msg.style.transition = 'opacity 0.5s ease-out, height 0.5s ease-out, padding 0.5s ease-out, margin 0.5s ease-out, border 0.5s ease-out';
+                }, 5000); // Messages disappear after 5 seconds
+            });
+        });
+    </script>
+</body>
+</html>

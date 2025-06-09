@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Add New Employee - Nexnora</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="logo-container">
+        <img src="{{ url_for('static', filename='nexnoralogo.jpg') }}" alt="Nexnora Technologies Logo" class="logo">
+    </div>
+    <h1>Add New Employee</h1>
+
+    <div class="button-group">
+        <a href="{{ url_for('index') }}"><button>Back to Home</button></a>
+        <a href="{{ url_for('records') }}"><button>View All Records</button></a>
+        <a href="{{ url_for('logout') }}"><button class="logout-btn">Logout</button></a>
+    </div>
+
+    {# Flash Messages #}
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <ul class="flash-messages">
+        {% for category, message in messages %}
+          <li class="flash-message {{ category }}">{{ message }}</li>
+        {% endfor %}
+        </ul>
+      {% endif %}
+    {% endwith %}
+
+    <form method="POST">
+        <label for="employee_id_text">Employee ID (Unique):</label>
+        <input type="text" id="employee_id_text" name="employee_id_text" placeholder="Unique Employee ID (e.g., E001)" required>
+
+        <label for="name">Employee Name:</label>
+        <input type="text" id="name" name="name" placeholder="Full Name" required>
+
+        <label for="department">Department (Optional):</label>
+        <input type="text" id="department" name="department" placeholder="e.g., HR, Engineering">
+
+        <label for="job_title">Job Title (Optional):</label>
+        <input type="text" id="job_title" name="job_title" placeholder="e.g., Software Engineer">
+
+        <button type="submit">Add Employee</button>
+    </form>
+
+    <h2>Current Employees</h2>
+    {% if employees %}
+    <table>
+        <thead>
+            <tr>
+                <th>Internal ID</th>
+                <th>Employee ID</th>
+                <th>Name</th>
+                <th>Department</th>
+                <th>Job Title</th>
+                <th>Actions</th> {# New column for action buttons #}
+            </tr>
+        </thead>
+        <tbody>
+            {% for employee in employees %}
+            <tr>
+                <td>{{ employee.id }}</td>
+                <td>{{ employee.employee_id_text }}</td>
+                <td>{{ employee.name }}</td>
+                <td>{{ employee.department if employee.department else 'N/A' }}</td>
+                <td>{{ employee.job_title if employee.job_title else 'N/A' }}</td>
+                <td>
+                    <a href="{{ url_for('employee_report', employee_id=employee.id) }}"><button class="report-btn">View Report</button></a>
+                </td> {# Button to view individual report #}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p style="text-align: center;">No employees added yet.</p>
+    {% endif %}
+
+</body>
+</html>
