@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Employee Attendance Tracker - Nexnora</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .attendance-container {
+            max-width: 600px;
+            margin: 30px auto;
+            padding: 30px;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .attendance-form {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .form-group label {
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        
+        .form-group select, .form-group input {
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+            justify-content: center;
+        }
+        
+        .mark-in-btn {
+            background-color: #27ae60;
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+        
+        .mark-out-btn {
+            background-color: #e74c3c;
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+        
+        .mark-in-btn:hover {
+            background-color: #219653;
+        }
+        
+        .mark-out-btn:hover {
+            background-color: #c0392b;
+        }
+        
+        .mark-in-btn:disabled, .mark-out-btn:disabled {
+            background-color: #95a5a6;
+            cursor: not-allowed;
+        }
+        
+        .status-indicator {
+            text-align: center;
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        
+        .status-in {
+            background-color: #d5f5e3;
+            color: #27ae60;
+        }
+        
+        .status-out {
+            background-color: #fadbd8;
+            color: #e74c3c;
+        }
+        
+        .status-none {
+            background-color: #ebf5fb;
+            color: #3498db;
+        }
+        
+        .admin-message {
+            text-align: center;
+            margin-top: 30px;
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="logo-container">
+        <img src="{{ url_for('static', filename='nexnoralogo.jpg') }}" alt="Nexnora Technologies Logo" class="logo">
+    </div>
+    <h1>Employee Attendance Tracker</h1>
+    
+    <div style="text-align: center; margin-bottom: 20px;">
+        {% if not session.get('admin') %}
+            <a href="{{ url_for('login') }}"><button class="admin-login-btn">Admin Login</button></a>
+        {% endif %}
+  
+        {% if session.get('admin') %}
+            <a href="{{ url_for('admin_dashboard') }}"><button class="dashboard-btn">Go to Admin Dashboard</button></a>
+            <a href="{{ url_for('logout') }}"><button class="logout-btn">Logout</button></a>
+        {% endif %}
+    </div>
+
+    {# Flash Messages #}
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <ul class="flash-messages">
+        {% for category, message in messages %}
+          <li class="flash-message {{ category }}">{{ message }}</li>
+        {% endfor %}
+        </ul>
+      {% endif %}
+    {% endwith %}
+
+    {% if not session.get('admin') %}
+        <div class="attendance-container">
+            <form id="attendance-form" class="attendance-form">
+                <div class="form-group">
+                    <label for="employee_id">Select Your Name:</label>
+                    <select name="employee_id" id="employee_id" required>
+                        <option value="">-- Select Employee --</option>
+                        {% for employee in employees %}
+                            <option value="{{ employee.id }}">{{ employee.name }} ({{ employee.employee_id_text }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="location">Location:</label>
+                    <select name="location" id="location" required>
+                        <option value="">-- Select Location --</option>
+                        <option value="Onsite">Onsite</option>
+                        <option value="Remote">Remote</option>
+                    </select>
+                </div>
+
+                <div id="status-indicator" class="status-indicator" style="display: none;">
+                    Current Status: <span id="status-text"></span>
+                </div>
+
+                <div class="button-group">
+                    <button type="button" id="mark-in-button" class="mark-in-btn" disabled>Mark IN</button>
+                    <button type="button" id="mark-out-button" class="mark-out-btn" disabled>Mark OUT</button>
+                </div>
+            </form>
+        </div>
+    {% else %}
+        <div class="admin-message">
+            <p>You are logged in as Admin. Please use the Admin Dashboard for management tasks.</p>
+        </div>
+    {% endif %}
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const employeeSelect = document.getElementById('employee_id');
+            const markInButton = document.getElementById('mark-in-button');
+            const markOutButton = document.getElementById('mark-out-button');
+            const locationSelect = document.getElementById('location');
+            const statusIndicator = document.getElementById('status-indicator');
+            const statusText = document.getElementById('status-text');
+
+            // Function to update button states based on attendance status
+            const updateButtonStates = async (employeeId) => {
+                if (!employeeId) {
+                    markInButton.disabled = true;
+                    markOutButton.disabled = true;
+                    locationSelect.disabled = false;
+                    locationSelect.value = '';
+                    statusIndicator.style.display = 'none';
+                    return;
+                }
+
+                try {
+                    const response = await fetch(`/get_attendance_status/${employeeId}`);
+                    const data = await response.json();
+
+                    statusIndicator.style.display = 'block';
+                    
+                    if (data.status === 'IN') {
+                        statusText.textContent = 'Currently IN (You can mark OUT)';
+                        statusIndicator.className = 'status-indicator status-in';
+                        markInButton.disabled = true;
+                        markOutButton.disabled = false;
+                        locationSelect.disabled = true;
+                    } else if (data.status === 'OUT') {
+                        statusText.textContent = 'Already marked OUT for today';
+                        statusIndicator.className = 'status-indicator status-out';
+                        markInButton.disabled = true;
+                        markOutButton.disabled = true;
+                        locationSelect.disabled = false;
+                    } else { // NONE
+                        statusText.textContent = 'Not marked IN yet today';
+                        statusIndicator.className = 'status-indicator status-none';
+                        markInButton.disabled = false;
+                        markOutButton.disabled = true;
+                        locationSelect.disabled = false;
+                    }
+                } catch (error) {
+                    console.error('Error fetching attendance status:', error);
+                    statusIndicator.style.display = 'none';
+                    markInButton.disabled = false;
+                    markOutButton.disabled = false;
+                    locationSelect.disabled = false;
+                }
+            };
+
+            // Initial load: update buttons if an employee is pre-selected
+            if (employeeSelect.value) {
+                updateButtonStates(employeeSelect.value);
+            }
+
+            // Event listener for employee selection change
+            employeeSelect.addEventListener('change', () => {
+                updateButtonStates(employeeSelect.value);
+            });
+
+            // Handle Mark IN button click
+            markInButton.addEventListener('click', async () => {
+                const selectedEmployeeId = employeeSelect.value;
+                const selectedLocation = locationSelect.value;
+                
+                if (!selectedEmployeeId) {
+                    alert("Please select an employee name.");
+                    return;
+                }
+                if (!selectedLocation) {
+                    alert("Please select a location.");
+                    return;
+                }
+
+                const formData = new FormData();
+                formData.append('employee_id', selectedEmployeeId);
+                formData.append('location', selectedLocation);
+
+                try {
+                    const response = await fetch('/mark_in', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    if (response.redirected) {
+                        window.location.href = response.url;
+                    } else {
+                        const result = await response.json();
+                        alert(result.message || "Attendance marked IN successfully");
+                        updateButtonStates(selectedEmployeeId);
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert("An error occurred while marking IN");
+                }
+            });
+
+            // Handle Mark OUT button click
+            markOutButton.addEventListener('click', async () => {
+                const selectedEmployeeId = employeeSelect.value;
+                if (!selectedEmployeeId) {
+                    alert("Please select an employee name.");
+                    return;
+                }
+
+                const formData = new FormData();
+                formData.append('employee_id', selectedEmployeeId);
+
+                try {
+                    const response = await fetch('/mark_out', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    if (response.redirected) {
+                        window.location.href = response.url;
+                    } else {
+                        const result = await response.json();
+                        alert(result.message || "Attendance marked OUT successfully");
+                        updateButtonStates(selectedEmployeeId);
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert("An error occurred while marking OUT");
+                }
+            });
+
+            // Make flash messages disappear after a few seconds
+            const flashMessages = document.querySelectorAll('.flash-message');
+            flashMessages.forEach(msg => {
+                setTimeout(() => {
+                    msg.style.opacity = '0';
+                    msg.style.height = '0';
+                    msg.style.padding = '0';
+                    msg.style.margin = '0';
+                    msg.style.border = 'none';
+                    msg.style.transition = 'opacity 0.5s ease-out, height 0.5s ease-out, padding 0.5s ease-out, margin 0.5s ease-out, border 0.5s ease-out';
+                }, 5000);
+            });
+        });
+    </script>
+</body>
+</html>
